@@ -5,7 +5,7 @@ DFRobot_BloodOxygen_S_I2C sensor(&Wire, 0x57);
 
 void setup() {
   Serial.begin(115200);
-  delay(1000);
+  delay(1000); 
 
   Wire.begin();  // SDA=A4, SCL=A5
 
