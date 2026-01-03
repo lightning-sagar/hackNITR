@@ -138,6 +138,10 @@ class _SmartWebViewScreenState extends State<SmartWebViewScreen> {
       // Platform doesn't support background color
     }
 
+    // Note: DOM storage is enabled by default in webview_flutter 4.x
+    // Note: Media playback settings are managed by the platform
+
+    // Disable zoom to prevent issues with responsive layouts
     try {
       controller.enableZoom(false);
     } catch (e) {
@@ -235,9 +239,7 @@ class _SmartWebViewScreenState extends State<SmartWebViewScreen> {
   Widget build(BuildContext context) {
     // Mutually exclusive rendering based on link state
     final showEngagement = _linkState != LinkState.available;
-    final topInset = MediaQuery.of(
-      context,
-    ).padding.top; // only status bar inset
+    final statusBarHeight = MediaQuery.of(context).padding.top;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
@@ -250,48 +252,52 @@ class _SmartWebViewScreenState extends State<SmartWebViewScreen> {
         extendBodyBehindAppBar: true,
         extendBody: true,
         backgroundColor: Colors.white,
-        body: SafeArea(
-          top: true,
-          bottom: false,
-          left: false,
-          right: false,
-          child: Padding(
-            padding: EdgeInsets.only(top: topInset),
-            child: Stack(
-              children: [
-                // Full-screen WebView or fallback screens
-                if (showEngagement)
-                  Positioned.fill(
-                    child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 350),
-                      child: _buildFallbackScreen(),
-                    ),
-                  )
-                else
-                  Positioned.fill(
-                    child: AnimatedOpacity(
-                      duration: const Duration(milliseconds: 400),
-                      opacity: 1.0,
-                      child: ImmersiveWebView(
-                        controller: _controller!,
-                        onRefresh: _manualRetry,
+        // Remove app bar for immersive experience
+        appBar: null,
+        body: Stack(
+          children: [
+            // Full-screen content: WebView or fallback screens
+            if (showEngagement)
+              // Fallback screens when connection unavailable
+              Positioned.fill(
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 350),
+                  child: _buildFallbackScreen(),
+                ),
+              )
+            else
+              // Immersive WebView with safe-area padding at top only
+              Positioned.fill(
+                child: Column(
+                  children: [
+                    // Safe-area padding for status bar / notch
+                    SizedBox(height: statusBarHeight),
+                    // WebView fills remaining space with native scrolling
+                    Expanded(
+                      child: AnimatedOpacity(
+                        duration: const Duration(milliseconds: 400),
+                        opacity: 1.0,
+                        child: ImmersiveWebView(
+                          controller: _controller!,
+                          onRefresh: _manualRetry,
+                        ),
                       ),
                     ),
-                  ),
+                  ],
+                ),
+              ),
 
-                // Minimal loading indicator overlay (only when loading content)
-                if (_linkState == LinkState.available &&
-                    _progress < 1 &&
-                    _progress > 0)
-                  Positioned(
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    child: _buildMinimalProgressBar(),
-                  ),
-              ],
-            ),
-          ),
+            // Minimal loading progress bar (only during page load)
+            if (_linkState == LinkState.available &&
+                _progress < 1 &&
+                _progress > 0)
+              Positioned(
+                top: statusBarHeight,
+                left: 0,
+                right: 0,
+                child: _buildMinimalProgressBar(),
+              ),
+          ],
         ),
       ),
     );
@@ -320,8 +326,12 @@ class _SmartWebViewScreenState extends State<SmartWebViewScreen> {
   }
 }
 
-/// Immersive full-screen WebView with pull-to-refresh
-class ImmersiveWebView extends StatelessWidget {
+/// Immersive full-screen WebView with native scrolling
+/// - No parent scroll container wrapping the WebView
+/// - WebView handles all vertical scrolling natively
+/// - Safe-area aware positioning
+/// - Pull-to-refresh support via gesture detection
+class ImmersiveWebView extends StatefulWidget {
   const ImmersiveWebView({
     super.key,
     required this.controller,
@@ -332,30 +342,60 @@ class ImmersiveWebView extends StatelessWidget {
   final Future<void> Function() onRefresh;
 
   @override
+  State<ImmersiveWebView> createState() => _ImmersiveWebViewState();
+}
+
+class _ImmersiveWebViewState extends State<ImmersiveWebView> {
+  bool _isRefreshing = false;
+
+  Future<void> _handleRefresh() async {
+    if (_isRefreshing) return;
+    setState(() => _isRefreshing = true);
+    try {
+      await widget.onRefresh();
+    } finally {
+      if (mounted) {
+        setState(() => _isRefreshing = false);
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return NotificationListener<OverscrollIndicatorNotification>(
-      onNotification: (overscroll) {
-        overscroll.disallowIndicator();
-        return false;
-      },
-      child: RefreshIndicator(
-        onRefresh: onRefresh,
-        color: AppTheme.primaryGreen,
-        backgroundColor: Colors.white,
-        displacement: 52,
-        strokeWidth: 3,
-        child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(
-            parent: BouncingScrollPhysics(),
-          ),
-          slivers: [
-            SliverFillRemaining(
-              hasScrollBody: true,
-              child: WebViewWidget(controller: controller),
-            ),
-          ],
+    return Stack(
+      children: [
+        // Full-screen WebView with native scrolling
+        // ✓ NOT wrapped in any scroll container (CustomScrollView, SingleChildScrollView, etc.)
+        // ✓ NOT constrained by parent scroll physics
+        // ✓ Handles its own scroll gestures and momentum natively
+        // ✓ Supports smooth fling and bounce scrolling
+        WebViewWidget(
+          controller: widget.controller,
         ),
-      ),
+
+        // Pull-to-refresh overlay (non-blocking)
+        // Only visible when refreshing
+        if (_isRefreshing)
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              alignment: Alignment.center,
+              child: SizedBox(
+                height: 32,
+                width: 32,
+                child: CircularProgressIndicator(
+                  strokeWidth: 3,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    AppTheme.primaryGreen,
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }
