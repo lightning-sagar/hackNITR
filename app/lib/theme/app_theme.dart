@@ -3,47 +3,34 @@ import 'package:flutter/material.dart';
 /// Agricultural Theme - Clean White + Light Green palette
 /// Represents agriculture, livestock, growth, and sustainability
 class AppTheme {
-  // Primary Agricultural Colors
-  static const Color primaryGreen = Color(
-    0xFF7CB342,
-  ); // Soft agricultural green (leaf/pasture)
-  static const Color lightGreen = Color(0xFF9CCC65); // Light pasture green
-  static const Color mintGreen = Color(0xFFA5D6A7); // Light mint/sage green
-  static const Color paleGreen = Color(0xFFC5E1A5); // Very light green
+  // Primary Agricultural Colors (from web palette)
+  static const Color primaryGreen = Color(0xFF2A6F4F); // hsl(152,45%,30%)
+  static const Color lightGreen = Color(0xFF34B262); // hsl(142,55%,45%)
+  static const Color paleGreen = Color(0x1A34B262); // 10% of lightGreen for soft fills
 
   // Background Colors
-  static const Color pureWhite = Color(0xFFFFFFFF);
+  static const Color pureWhite = Color(0xFFFFFFFF); // Base surface
   static const Color offWhite = Color(0xFFFAFAFA);
-  static const Color lightBackground = Color(0xFFF5F5F5);
+  static const Color lightBackground = Color(0xFFFFFFFF);
 
-  // Accent Earth Tones (subtle, used sparingly)
-  static const Color lightBrown = Color(0xFFBCAAA4);
-  static const Color mutedYellow = Color(0xFFFFF9C4);
-  static const Color warmBeige = Color(0xFFEFEBE9);
+  // Accent Tones
+  static const Color accentOrange = Color(0xFFF47B25); // hsl(25,90%,55%)
 
-  // Text Colors (high contrast for outdoor readability)
-  static const Color darkText = Color(
-    0xFF1B5E20,
-  ); // Dark green for primary text
-  static const Color mediumText = Color(
-    0xFF558B2F,
-  ); // Medium green for secondary text
-  static const Color lightText = Color(
-    0xFF689F38,
-  ); // Light green for tertiary text
-  static const Color subtleText = Color(0xFF9E9E9E); // Gray for subtle text
+  // Text Colors (web-to-app mapping)
+  static const Color darkText = Color(0xFF1C402F); // Headings / footer
+  static const Color mediumText = Color(0xFF1F4734); // Primary text
+  static const Color lightText = Color(0xFF527A67); // Secondary text
+  static const Color subtleText = Color(0xFF5C8A74); // Muted/supporting
 
-  // Status Colors (green-based except critical alerts)
-  static const Color successGreen = Color(0xFF66BB6A);
-  static const Color warningYellow = Color(0xFFFFEE58);
-  static const Color criticalRed = Color(
-    0xFFEF5350,
-  ); // Only for critical issues
-  static const Color infoBlue = Color(0xFF81C784); // Muted blue-green
+  // Status Colors
+  static const Color successGreen = primaryGreen; // Success aligns with brand
+  static const Color warningYellow = accentOrange; // Warm warning highlight
+  static const Color criticalRed = Color(0xFFEF5350); // Keep distinct for critical
+  static const Color infoBlue = Color(0xFF5C8A74); // Calm info tone from palette
 
   // Shadow and Border Colors
   static const Color softShadow = Color(0x1A000000); // Soft shadows
-  static const Color borderGray = Color(0xFFE0E0E0);
+  static const Color borderGray = Color(0xFFD9E8DE); // hsl(140,25%,88%)
 
   /// Light Theme - Main theme for the app
   static ThemeData get lightTheme {
@@ -55,24 +42,24 @@ class AppTheme {
       colorScheme: const ColorScheme.light(
         primary: primaryGreen,
         onPrimary: pureWhite,
-        primaryContainer: paleGreen,
-        onPrimaryContainer: darkText,
+        primaryContainer: lightGreen,
+        onPrimaryContainer: pureWhite,
 
-        secondary: mintGreen,
-        onSecondary: darkText,
-        secondaryContainer: Color(0xFFE8F5E9),
-        onSecondaryContainer: darkText,
+        secondary: lightGreen,
+        onSecondary: pureWhite,
+        secondaryContainer: paleGreen,
+        onSecondaryContainer: mediumText,
 
-        tertiary: lightBrown,
+        tertiary: accentOrange,
         onTertiary: pureWhite,
 
         surface: pureWhite,
-        onSurface: darkText,
+        onSurface: mediumText,
         surfaceVariant: offWhite,
-        onSurfaceVariant: mediumText,
+        onSurfaceVariant: lightText,
 
         background: offWhite,
-        onBackground: darkText,
+        onBackground: mediumText,
 
         error: criticalRed,
         onError: pureWhite,
@@ -210,7 +197,7 @@ class AppTheme {
         deleteIconColor: mediumText,
         disabledColor: borderGray,
         selectedColor: primaryGreen,
-        secondarySelectedColor: mintGreen,
+        secondarySelectedColor: lightGreen,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         labelStyle: const TextStyle(
           color: darkText,
@@ -314,42 +301,42 @@ class AppTheme {
           fontSize: 16,
           fontWeight: FontWeight.w400,
           letterSpacing: 0.5,
-          color: darkText,
+          color: mediumText,
           height: 1.5,
         ),
         bodyMedium: TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w400,
           letterSpacing: 0.25,
-          color: darkText,
+          color: mediumText,
           height: 1.45,
         ),
         bodySmall: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w400,
           letterSpacing: 0.4,
-          color: mediumText,
+          color: lightText,
           height: 1.35,
         ),
         labelLarge: TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w600,
           letterSpacing: 0.1,
-          color: darkText,
+          color: mediumText,
           height: 1.45,
         ),
         labelMedium: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w600,
           letterSpacing: 0.5,
-          color: mediumText,
+          color: lightText,
           height: 1.35,
         ),
         labelSmall: TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w500,
           letterSpacing: 0.5,
-          color: mediumText,
+          color: lightText,
           height: 1.3,
         ),
       ),
@@ -361,12 +348,11 @@ class AppTheme {
     return const BoxDecoration(
       gradient: LinearGradient(
         colors: [
-          Color(0xFFFAFAFA), // Off-white
-          Color(0xFFF1F8E9), // Very light green
-          Color(0xFFE8F5E9), // Pale mint
+          primaryGreen,
+          lightGreen,
         ],
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
       ),
     );
   }
@@ -375,7 +361,7 @@ class AppTheme {
   static BoxDecoration get cardGradient {
     return BoxDecoration(
       gradient: LinearGradient(
-        colors: [pureWhite, paleGreen.withOpacity(0.1)],
+        colors: [pureWhite, lightGreen.withOpacity(0.08)],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
       ),
@@ -391,8 +377,8 @@ class AppTheme {
     return BoxDecoration(
       gradient: const LinearGradient(
         colors: [
-          Color(0xFF81C784), // Light green
-          Color(0xFF66BB6A), // Medium green
+          lightGreen,
+          primaryGreen,
         ],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
@@ -404,10 +390,10 @@ class AppTheme {
   /// Warning/Attention Gradient
   static BoxDecoration get warningGradient {
     return BoxDecoration(
-      gradient: const LinearGradient(
+      gradient: LinearGradient(
         colors: [
-          Color(0xFFFFF9C4), // Light yellow
-          Color(0xFFFFEE58), // Muted yellow
+          accentOrange.withOpacity(0.85),
+          accentOrange,
         ],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
