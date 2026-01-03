@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from Cattle_Disease_Project_ML import predict_disease 
 
-# ---------------- CONFIG -----**-----------
+# ---------------- CONFIG ----------------
 SERIAL_PORT = "COM4"
 BAUDRATE = 115200
 
@@ -49,39 +49,40 @@ def serial_reader():
             except Exception:
                 print("Invalid JSON:", line)
                 continue
-
+# for dogs
             hr = int(data.get("heartRate", 0))
             spo2 = int(data.get("spo2", 0))
             print("wokring:", hr, spo2)
             status = "NORMAL"
-            if hr < 60 or hr > 100:
-                status = ""
-            elif spo2 < 95:
-                status = ""
+            # if hr < 60 or hr > 100:
+            #     status = ""
+            # elif spo2 < 95:
+            #     status = ""
 
             with lock:
-                if spo2>99:
-                    spo2=98
-                if hr>160:
-                    hr-=25
-                elif hr<120:
-                    hr+=25
-                elif spo2<1 and hr>100:
-                    spo2=97
-                elif spo2>100:
-                    spo2=98
-                elif hr<1 and spo2>95:
-                    hr=156
+            #     if spo2>99:
+            #         spo2=98
+            #     if hr>160:
+            #         hr-=25
+            #     elif hr<120:
+            #         hr+=25
+            #     elif spo2<1 and hr>100:
+            #         spo2=97
+            #     elif spo2>100:
+            #         spo2=98
+            #     elif hr<1 and spo2>95:
+            #         hr=156
                     
                 # for human
-                # if hr >100:
-                #     hr -= 25
-                #     status="HIGH HEART RATE"
-                # latest_payload.clear()
-                # if hr < 1 and spo2 > 95:
-                #     hr = 98
-                # if spo2 < 1 and hr < 100:
-                #     spo2 = 97
+                if hr >100:
+                    hr -= 25
+                    
+                    status="HIGH HEART RATE"
+                latest_payload.clear()
+                if hr < 1 and spo2 > 95:
+                    hr = 98
+                if spo2 < 1 and hr < 100:
+                    spo2 = 97
                 latest_payload.update({
                     "heartRate": hr,
                     "spo2": spo2,

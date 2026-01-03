@@ -29,7 +29,7 @@ const FeedPage = () => {
   const [frameCount, setFrameCount] = useState(0);
   const [controlStyle, setControlStyle] = useState<"text" | "arrows">("text");
 
-  const CONTROL_API_URL = "http://172.27.145.113:8000/control";
+  const CONTROL_API_URL = "http://10.137.194.51:8000/control";
   const ROBOFLOW_API_KEY = "iWTbz1A2Zwcd6yJNw8F3";
   const ROBOFLOW_API_URL =
     "https://serverless.roboflow.com/person-detection-9a6mk/16";
@@ -74,7 +74,7 @@ const FeedPage = () => {
     const resultCtx = resultCanvas.getContext("2d");
     if (!liveCtx || !resultCtx) return;
 
-    const liveSocket = new WebSocket("ws://172.27.145.113:8000/share") as any;
+    const liveSocket = new WebSocket("ws://10.137.194.51:8000/share") as any;
     liveSocket.binaryType = "arraybuffer";
     let frameIndex = 0;
 
