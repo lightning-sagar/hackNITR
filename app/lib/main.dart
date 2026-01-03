@@ -30,8 +30,8 @@ class MainApp extends StatelessWidget {
   }
 }
 
-// Testing with invalid URL to demonstrate fallback engagement screen
-const String kHardcodedUrl = 'https://lms-iota-seven.vercel.app/';
+
+const String kHardcodedUrl = 'https://502a76290850.ngrok-free.app/';
 
 enum LinkState { checking, available, unavailable }
 
