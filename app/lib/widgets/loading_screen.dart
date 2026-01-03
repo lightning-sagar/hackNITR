@@ -38,48 +38,38 @@ class _LoadingScreenState extends State<LoadingScreen>
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFFFAFAFA), Color(0xFFF1F8E9), Color(0xFFE8F5E9)],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
-      ),
+      color: Colors.white,
       child: Center(
         child: Padding(
           padding: const EdgeInsets.all(32),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Loading animation
+              // Minimal loading animation
               _buildLoadingAnimation(),
-              const SizedBox(height: 32),
+              const SizedBox(height: 24),
 
               // Loading message
               Text(
                 widget.message,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: AppTheme.darkText,
-                  fontWeight: FontWeight.w600,
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: AppTheme.mediumText,
+                  fontWeight: FontWeight.w500,
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
 
-              // Progress indicator
+              // Minimal progress indicator
               SizedBox(
-                width: 200,
+                width: 150,
                 child: LinearProgressIndicator(
-                  backgroundColor: AppTheme.paleGreen.withOpacity(0.3),
+                  backgroundColor: AppTheme.paleGreen.withOpacity(0.2),
                   valueColor: const AlwaysStoppedAnimation<Color>(
                     AppTheme.primaryGreen,
                   ),
                 ),
               ),
-              const SizedBox(height: 32),
-
-              // Fact card
-              _buildFactCard(),
             ],
           ),
         ),
@@ -88,78 +78,26 @@ class _LoadingScreenState extends State<LoadingScreen>
   }
 
   Widget _buildLoadingAnimation() {
-    return Card(
-      elevation: 4,
-      shadowColor: AppTheme.softShadow,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Container(
-        height: 200,
-        width: 200,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          gradient: const LinearGradient(
-            colors: [Color(0xFFE8F5E9), Color(0xFFF1F8E9)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: Center(
-          child: Lottie.network(
-            'https://assets8.lottiefiles.com/packages/lf20_kcsr6fcp.json',
-            repeat: true,
-            fit: BoxFit.contain,
-            errorBuilder: (_, __, ___) => RotationTransition(
-              turns: _rotationController,
-              child: const Icon(
-                Icons.eco_rounded,
-                size: 80,
-                color: AppTheme.primaryGreen,
-              ),
-            ),
-          ),
-        ),
+    return Container(
+      height: 120,
+      width: 120,
+      decoration: BoxDecoration(
+        color: AppTheme.paleGreen.withOpacity(0.1),
+        shape: BoxShape.circle,
       ),
-    );
-  }
-
-  Widget _buildFactCard() {
-    return Card(
-      elevation: 2,
-      color: AppTheme.pureWhite,
-      shadowColor: AppTheme.softShadow,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.agriculture_rounded,
-                  color: AppTheme.primaryGreen,
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'Did you know?',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    color: AppTheme.darkText,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
+      child: Center(
+        child: Lottie.network(
+          'https://assets8.lottiefiles.com/packages/lf20_kcsr6fcp.json',
+          repeat: true,
+          fit: BoxFit.contain,
+          errorBuilder: (_, __, ___) => RotationTransition(
+            turns: _rotationController,
+            child: const Icon(
+              Icons.eco_rounded,
+              size: 60,
+              color: AppTheme.primaryGreen,
             ),
-            const SizedBox(height: 12),
-            Text(
-              _currentFact,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppTheme.mediumText,
-                height: 1.5,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
+          ),
         ),
       ),
     );

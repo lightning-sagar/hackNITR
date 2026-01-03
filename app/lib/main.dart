@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:webview_flutter/webview_flutter.dart';
 
@@ -122,40 +123,57 @@ class _SmartWebViewScreenState extends State<SmartWebViewScreen> {
   }
 
   void _createWebView() {
-    final controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(Colors.transparent)
-      ..enableZoom(false)
-      ..setNavigationDelegate(
-        NavigationDelegate(
-          onNavigationRequest: (request) {
-            final allowed =
-                request.url.startsWith('http://') ||
-                request.url.startsWith('https://');
-            return allowed
-                ? NavigationDecision.navigate
-                : NavigationDecision.prevent;
-          },
-          onProgress: (value) {
-            if (mounted) {
-              setState(() => _progress = value.clamp(0, 100) / 100);
-            }
-          },
-          onPageFinished: (_) {
-            if (mounted) setState(() => _progress = 1.0);
-          },
-          onWebResourceError: (_) {
-            // Silently tear down and return to engagement
-            if (mounted) {
-              _tearDownWebView();
-              setState(() => _linkState = LinkState.unavailable);
-              _scheduleRetry();
-            }
-          },
-        ),
-      )
-      ..loadRequest(Uri.parse(kHardcodedUrl));
+    final controller = WebViewController();
 
+    // Configure WebView with platform-safe settings
+    try {
+      controller.setJavaScriptMode(JavaScriptMode.unrestricted);
+    } catch (e) {
+      // Platform doesn't support JavaScript mode configuration
+    }
+
+    try {
+      controller.setBackgroundColor(Colors.transparent);
+    } catch (e) {
+      // Platform doesn't support background color
+    }
+
+    try {
+      controller.enableZoom(false);
+    } catch (e) {
+      // Platform doesn't support zoom configuration
+    }
+
+    controller.setNavigationDelegate(
+      NavigationDelegate(
+        onNavigationRequest: (request) {
+          final allowed =
+              request.url.startsWith('http://') ||
+              request.url.startsWith('https://');
+          return allowed
+              ? NavigationDecision.navigate
+              : NavigationDecision.prevent;
+        },
+        onProgress: (value) {
+          if (mounted) {
+            setState(() => _progress = value.clamp(0, 100) / 100);
+          }
+        },
+        onPageFinished: (_) {
+          if (mounted) setState(() => _progress = 1.0);
+        },
+        onWebResourceError: (_) {
+          // Silently tear down and return to engagement
+          if (mounted) {
+            _tearDownWebView();
+            setState(() => _linkState = LinkState.unavailable);
+            _scheduleRetry();
+          }
+        },
+      ),
+    );
+
+    controller.loadRequest(Uri.parse(kHardcodedUrl));
     _controller = controller;
   }
 
@@ -217,78 +235,127 @@ class _SmartWebViewScreenState extends State<SmartWebViewScreen> {
   Widget build(BuildContext context) {
     // Mutually exclusive rendering based on link state
     final showEngagement = _linkState != LinkState.available;
+    final topInset = MediaQuery.of(
+      context,
+    ).padding.top; // only status bar inset
 
-    return Scaffold(
-      extendBodyBehindAppBar: _linkState == LinkState.available,
-      appBar: _linkState == LinkState.available
-          ? AppBar(
-              backgroundColor: Colors.white.withOpacity(0.95),
-              elevation: 2,
-              shadowColor: Colors.black.withOpacity(0.1),
-              title: const Text('Agricultural LMS'),
-              actions: [
-                IconButton(
-                  tooltip: 'Reload',
-                  onPressed: () => _controller?.reload(),
-                  icon: const Icon(Icons.refresh),
-                ),
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+        systemNavigationBarColor: Colors.white,
+        systemNavigationBarIconBrightness: Brightness.dark,
+      ),
+      child: Scaffold(
+        extendBodyBehindAppBar: true,
+        extendBody: true,
+        backgroundColor: Colors.white,
+        body: SafeArea(
+          top: true,
+          bottom: false,
+          left: false,
+          right: false,
+          child: Padding(
+            padding: EdgeInsets.only(top: topInset),
+            child: Stack(
+              children: [
+                // Full-screen WebView or fallback screens
+                if (showEngagement)
+                  Positioned.fill(
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 350),
+                      child: _buildFallbackScreen(),
+                    ),
+                  )
+                else
+                  Positioned.fill(
+                    child: AnimatedOpacity(
+                      duration: const Duration(milliseconds: 400),
+                      opacity: 1.0,
+                      child: ImmersiveWebView(
+                        controller: _controller!,
+                        onRefresh: _manualRetry,
+                      ),
+                    ),
+                  ),
+
+                // Minimal loading indicator overlay (only when loading content)
+                if (_linkState == LinkState.available &&
+                    _progress < 1 &&
+                    _progress > 0)
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: _buildMinimalProgressBar(),
+                  ),
               ],
-              bottom: _progress < 1
-                  ? PreferredSize(
-                      preferredSize: const Size.fromHeight(4),
-                      child: LinearProgressIndicator(value: _progress),
-                    )
-                  : null,
-            )
-          : null,
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Color(0xFFFAFAFA), // Off-white
-              Color(0xFFF1F8E9), // Very light green
-              Color(0xFFE8F5E9), // Pale mint
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+            ),
           ),
         ),
-        child: Stack(
-          children: [
-            // Mutually exclusive: show ONLY ONE at a time
-            if (showEngagement)
-              Positioned.fill(
-                child: SafeArea(
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 450),
-                    child: _buildFallbackScreen(),
-                  ),
-                ),
-              )
-            else
-              Positioned.fill(
-                child: SafeArea(
-                  child: AnimatedOpacity(
-                    duration: const Duration(milliseconds: 350),
-                    opacity: 1.0,
-                    child: WebViewContainer(controller: _controller!),
-                  ),
-                ),
-              ),
+      ),
+    );
+  }
+
+  /// Minimal progress bar for content loading
+  Widget _buildMinimalProgressBar() {
+    return Container(
+      height: 3,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppTheme.primaryGreen.withOpacity(0.8),
+            AppTheme.lightGreen.withOpacity(0.6),
           ],
+        ),
+      ),
+      child: LinearProgressIndicator(
+        value: _progress,
+        backgroundColor: Colors.transparent,
+        valueColor: AlwaysStoppedAnimation<Color>(
+          AppTheme.primaryGreen.withOpacity(0.3),
         ),
       ),
     );
   }
 }
 
-class WebViewContainer extends StatelessWidget {
-  const WebViewContainer({super.key, required this.controller});
+/// Immersive full-screen WebView with pull-to-refresh
+class ImmersiveWebView extends StatelessWidget {
+  const ImmersiveWebView({
+    super.key,
+    required this.controller,
+    required this.onRefresh,
+  });
 
   final WebViewController controller;
+  final Future<void> Function() onRefresh;
 
   @override
   Widget build(BuildContext context) {
-    return WebViewWidget(controller: controller);
+    return NotificationListener<OverscrollIndicatorNotification>(
+      onNotification: (overscroll) {
+        overscroll.disallowIndicator();
+        return false;
+      },
+      child: RefreshIndicator(
+        onRefresh: onRefresh,
+        color: AppTheme.primaryGreen,
+        backgroundColor: Colors.white,
+        displacement: 52,
+        strokeWidth: 3,
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics(),
+          ),
+          slivers: [
+            SliverFillRemaining(
+              hasScrollBody: true,
+              child: WebViewWidget(controller: controller),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
