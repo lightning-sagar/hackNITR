@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Leaf, Thermometer, Video, Stethoscope, Menu, X } from 'lucide-react';
+import { Leaf, Thermometer, Video, Stethoscope, Menu, X, Heart } from 'lucide-react';
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -11,6 +11,7 @@ const Navigation = () => {
     { path: '/temperature', label: 'Monitoring', icon: Thermometer },
     { path: '/feed', label: 'Live Feed', icon: Video },
     { path: '/DiseaseDetection', label: 'Disease Detection', icon: Stethoscope },
+    { path: '/vitals', label: 'Vitals', icon: Heart },
   ];
 
   return (
@@ -36,7 +37,7 @@ const Navigation = () => {
                   className={`nav-link flex items-center space-x-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 ${
                     location.pathname === path
                       ? 'bg-forest-600 text-white shadow-lg'
-                      : 'text-forest-700 hover:bg-forest-100'
+                      : 'text-forest-700 hover:bg-forest-100 hover:text-forest-600'
                   }`}
                 >
                   <Icon className="h-4 w-4" />
@@ -68,8 +69,8 @@ const Navigation = () => {
                   onClick={() => setIsOpen(false)}
                   className={`flex items-center space-x-3 px-4 py-3 rounded-xl text-base font-medium transition-all duration-200 ${
                     location.pathname === path
-                      ? 'bg-forest-600 text-white'
-                      : 'text-forest-700 hover:bg-forest-100'
+                      ? 'bg-forest-600 text-green'
+                      : 'text-green-700 hover:bg-forest-100 hover:text-green-600'
                   }`}
                 >
                   <Icon className="h-5 w-5" />

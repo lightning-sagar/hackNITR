@@ -33,7 +33,7 @@ const TemperaturePage = () => {
     console.log("Fetching sensor data...");
     try {
       const res = await fetch(
-        'https://b83cfae63877.ngrok-free.app/sensor',
+        'http://10.137.194.50:8000/sensor',
         {
           headers: {
             'ngrok-skip-browser-warning': 'true'
