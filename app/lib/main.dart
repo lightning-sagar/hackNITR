@@ -31,7 +31,7 @@ class MainApp extends StatelessWidget {
 }
 
 
-const String kHardcodedUrl = 'https://502a76290850.ngrok-free.app/';
+const String kHardcodedUrl = 'https://lms-iota-seven.vercel.app/';
 
 enum LinkState { checking, available, unavailable }
 
@@ -51,6 +51,9 @@ class _SmartWebViewScreenState extends State<SmartWebViewScreen> {
   StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
   Timer? _validationTimer;
   Timer? _periodicCheckTimer;
+  DateTime? _lastBackPressAt;
+  bool _isHandlingBack = false;
+  static const Duration _exitPromptWindow = Duration(seconds: 2);
 
   @override
   void initState() {
@@ -186,6 +189,56 @@ class _SmartWebViewScreenState extends State<SmartWebViewScreen> {
     _progress = 0;
   }
 
+  // Centralized back handling that mirrors browser navigation before exiting.
+  Future<bool> _handleBackPress() async {
+    if (_isHandlingBack) return false;
+    _isHandlingBack = true;
+
+    try {
+      // 1) Let Flutter navigator pop any dialogs/routes first.
+      final navigator = Navigator.of(context);
+      final popped = await navigator.maybePop();
+      if (popped) return false;
+
+      // 2) If WebView has history, go back there instead of exiting.
+      final controller = _controller;
+      if (controller != null && await controller.canGoBack()) {
+        await controller.goBack();
+        return false;
+      }
+
+      // 3) Root: require two back presses within the window to exit.
+      final now = DateTime.now();
+      final shouldExit =
+          _lastBackPressAt != null && now.difference(_lastBackPressAt!) < _exitPromptWindow;
+
+      _lastBackPressAt = now;
+
+      if (shouldExit) {
+        return true; // Allow system to close the app.
+      }
+
+      _showExitToast();
+      return false;
+    } finally {
+      _isHandlingBack = false;
+    }
+  }
+
+  void _showExitToast() {
+    final messenger = ScaffoldMessenger.of(context);
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: const Text('Press back button again to exit'),
+          duration: _exitPromptWindow,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(12),
+        ),
+      );
+  }
+
   void _scheduleRetry() {
     _validationTimer?.cancel();
     _validationTimer = Timer(const Duration(seconds: 6), () {
@@ -248,56 +301,59 @@ class _SmartWebViewScreenState extends State<SmartWebViewScreen> {
         systemNavigationBarColor: Colors.white,
         systemNavigationBarIconBrightness: Brightness.dark,
       ),
-      child: Scaffold(
-        extendBodyBehindAppBar: true,
-        extendBody: true,
-        backgroundColor: Colors.white,
-        // Remove app bar for immersive experience
-        appBar: null,
-        body: Stack(
-          children: [
-            // Full-screen content: WebView or fallback screens
-            if (showEngagement)
-              // Fallback screens when connection unavailable
-              Positioned.fill(
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 350),
-                  child: _buildFallbackScreen(),
-                ),
-              )
-            else
-              // Immersive WebView with safe-area padding at top only
-              Positioned.fill(
-                child: Column(
-                  children: [
-                    // Safe-area padding for status bar / notch
-                    SizedBox(height: statusBarHeight),
-                    // WebView fills remaining space with native scrolling
-                    Expanded(
-                      child: AnimatedOpacity(
-                        duration: const Duration(milliseconds: 400),
-                        opacity: 1.0,
-                        child: ImmersiveWebView(
-                          controller: _controller!,
-                          onRefresh: _manualRetry,
+      child: WillPopScope(
+        onWillPop: _handleBackPress,
+        child: Scaffold(
+          extendBodyBehindAppBar: true,
+          extendBody: true,
+          backgroundColor: Colors.white,
+          // Remove app bar for immersive experience
+          appBar: null,
+          body: Stack(
+            children: [
+              // Full-screen content: WebView or fallback screens
+              if (showEngagement)
+                // Fallback screens when connection unavailable
+                Positioned.fill(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 350),
+                    child: _buildFallbackScreen(),
+                  ),
+                )
+              else
+                // Immersive WebView with safe-area padding at top only
+                Positioned.fill(
+                  child: Column(
+                    children: [
+                      // Safe-area padding for status bar / notch
+                      SizedBox(height: statusBarHeight),
+                      // WebView fills remaining space with native scrolling
+                      Expanded(
+                        child: AnimatedOpacity(
+                          duration: const Duration(milliseconds: 400),
+                          opacity: 1.0,
+                          child: ImmersiveWebView(
+                            controller: _controller!,
+                            onRefresh: _manualRetry,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
 
-            // Minimal loading progress bar (only during page load)
-            if (_linkState == LinkState.available &&
-                _progress < 1 &&
-                _progress > 0)
-              Positioned(
-                top: statusBarHeight,
-                left: 0,
-                right: 0,
-                child: _buildMinimalProgressBar(),
-              ),
-          ],
+              // Minimal loading progress bar (only during page load)
+              if (_linkState == LinkState.available &&
+                  _progress < 1 &&
+                  _progress > 0)
+                Positioned(
+                  top: statusBarHeight,
+                  left: 0,
+                  right: 0,
+                  child: _buildMinimalProgressBar(),
+                ),
+            ],
+          ),
         ),
       ),
     );
