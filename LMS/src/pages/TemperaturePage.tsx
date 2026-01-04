@@ -29,17 +29,33 @@ const TemperaturePage = () => {
   const [currentData, setCurrentData] = useState<SensorData | null>(null);
   const [isConnected, setIsConnected] = useState(false);
 
+  // Normalization function - converts all values to 0-100 scale
+  const normalizeData = (sensorData: SensorData) => {
+    // Min-max normalization for each parameter
+    const tempNormalized = sensorData.temp// 0-50°C range
+    const humidityNormalized = sensorData.humidity  // 0-100% range
+    const pressureNormalized = (sensorData.pressure - 900)  // 900-1050 hPa range
+
+    return {
+      temp: Math.max(0, Math.min(100, tempNormalized)), // Clamp to 0-100
+      humidity: Math.max(0, Math.min(100, humidityNormalized)),
+      pressure: Math.max(0, Math.min(100, pressureNormalized)),
+      timestamp: sensorData.timestamp,
+      // Keep original values for tooltip display
+      tempOriginal: sensorData.temp,
+      humidityOriginal: sensorData.humidity,
+      pressureOriginal: sensorData.pressure,
+    };
+  };
+
   const fetchData = async () => {
     console.log("Fetching sensor data...");
     try {
-      const res = await fetch(
-        'http://10.137.194.50:8000/sensor',
-        {
-          headers: {
-            'ngrok-skip-browser-warning': 'true'
-          }
-        }
-      );
+      const res = await fetch("http://10.137.194.50:8000/sensor", {
+        headers: {
+          "ngrok-skip-browser-warning": "true",
+        },
+      });
 
       if (!res.ok) {
         throw new Error(`HTTP error! Status: ${res.status}`);
@@ -213,7 +229,7 @@ const TemperaturePage = () => {
         </div>
 
         {/* Charts */}
-        <div className="grid lg:grid-cols-2 gap-6">
+        <div className="grid lg:grid-cols-2 gap-6 mb-8">
           {/* Temperature Chart */}
           <ChartCard
             title="Temperature Trend"
@@ -237,7 +253,10 @@ const TemperaturePage = () => {
             unit="%"
             data={data}
           />
+        </div>
 
+        {/* Bottom Row - Pressure and Combined Chart */}
+        <div className="grid lg:grid-cols-2 gap-6">
           {/* Pressure Chart */}
           <ChartCard
             title="Pressure Trend"
@@ -249,6 +268,130 @@ const TemperaturePage = () => {
             unit="hPa"
             data={data}
           />
+
+          {/* Combined Parameters Chart - Compact */}
+          <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-green-100">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="bg-purple-100 p-2 rounded-lg">
+                <TrendingUp className="h-5 w-5 text-purple-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  All Parameters Overview
+                </h3>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Normalized 0-100 scale
+                </p>
+              </div>
+            </div>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={data.map(normalizeData)}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis
+                    dataKey="timestamp"
+                    stroke="#666"
+                    fontSize={11}
+                    tickFormatter={() => ""}
+                  />
+                  <YAxis 
+                    stroke="#666" 
+                    fontSize={11}
+                    domain={[0, 100]}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "rgba(255, 255, 255, 0.95)",
+                      border: "1px solid #e5e7eb",
+                      borderRadius: "8px",
+                      boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                      fontSize: "12px",
+                    }}
+                    formatter={(value: number, name: string) => {
+                      if (name === "temp") return [`${value.toFixed(1)}`, "Temp"];
+                      if (name === "humidity") return [`${value.toFixed(1)}`, "Humidity"];
+                      if (name === "pressure") return [`${value.toFixed(1)}`, "Pressure"];
+                      return [value, name];
+                    }}
+                    labelFormatter={(label) => `${label}`}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="temp"
+                    stroke="#dc2626"
+                    fill="url(#tempGradientNormalized)"
+                    strokeWidth={2}
+                    name="temp"
+                    isAnimationActive={true}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="humidity"
+                    stroke="#2563eb"
+                    fill="url(#humidityGradientNormalized)"
+                    strokeWidth={2}
+                    name="humidity"
+                    isAnimationActive={true}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="pressure"
+                    stroke="#f59e0b"
+                    fill="url(#pressureGradientNormalized)"
+                    strokeWidth={2}
+                    name="pressure"
+                    isAnimationActive={true}
+                  />
+                  <defs>
+                    <linearGradient
+                      id="tempGradientNormalized"
+                      x1="0"
+                      y1="0"
+                      x2="0"
+                      y2="1"
+                    >
+                      <stop offset="5%" stopColor="#dc2626" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#dc2626" stopOpacity={0.05} />
+                    </linearGradient>
+                    <linearGradient
+                      id="humidityGradientNormalized"
+                      x1="0"
+                      y1="0"
+                      x2="0"
+                      y2="1"
+                    >
+                      <stop offset="5%" stopColor="#2563eb" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#2563eb" stopOpacity={0.05} />
+                    </linearGradient>
+                    <linearGradient
+                      id="pressureGradientNormalized"
+                      x1="0"
+                      y1="0"
+                      x2="0"
+                      y2="1"
+                    >
+                      <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.05} />
+                    </linearGradient>
+                  </defs>
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="mt-3 flex gap-3 text-xs">
+              <div className="flex items-center space-x-1">
+                <div className="w-3 h-3 rounded-full bg-red-600"></div>
+                <span className="text-gray-600">Temp</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <div className="w-3 h-3 rounded-full bg-blue-600"></div>
+                <span className="text-gray-600">Humidity</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <div className="w-3 h-3 rounded-full bg-yellow-600"></div>
+                <span className="text-gray-600">Pressure</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
