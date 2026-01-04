@@ -132,7 +132,7 @@ const Index = () => {
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="text-sm opacity-80">Active Alerts</p>
-                          <p className="text-2xl font-bold">0</p>
+                          <p className="text-2xl font-bold">143</p>
                         </div>
                         <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center animate-pulse-glow">
                           <CheckCircle className="w-6 h-6" />

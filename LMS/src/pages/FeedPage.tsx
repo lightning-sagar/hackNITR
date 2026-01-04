@@ -1,19 +1,14 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from 'react-router-dom';
-import { Video, Wifi, WifiOff, Activity, AlertCircle, ArrowLeft } from "lucide-react";
+import {
+  Video,
+  Wifi,
+  WifiOff,
+  Activity,
+  AlertCircle,
+} from "lucide-react";
 import { ControlPad } from "../components/control-pad";
 import { ArrowControlPad } from "../components/Arrow-controller-pad";
 import axios from "axios";
-interface Prediction {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  confidence: number;
-  class: string;
-  class_id: number;
-  detection_id: string;
-}
 
 const FeedPage = () => {
   const liveCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -155,13 +150,7 @@ const FeedPage = () => {
   return (
     <div className="min-h-screen bg-hero-gradient pt-28 pb-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <Link 
-          to="/" className="inline-flex items-center gap-2 text-[hsl(var(--forest))] hover:text-[hsl(var(--forest-dark))] transition-colors mb-8"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          Back to Home
-        </Link>
-<div className="mb-8">
+        <div className="mb-8">
           <h1 className="text-4xl font-bold text-[hsl(var(--forest-dark))] mb-4 font-['Playfair_Display']">
             Live Feed Monitoring
           </h1>
@@ -187,7 +176,52 @@ const FeedPage = () => {
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-8">
+        {/* Mobile-only Control Section */}
+        <div className="lg:hidden mb-8">
+          <div className="card-glass rounded-2xl p-6 border border-[hsl(var(--meadow),0.2)]">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-semibold text-[hsl(var(--forest-dark))]">
+                🎮 Motor Controls
+              </h3>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => setControlStyle("text")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
+                    controlStyle === "text"
+                      ? "bg-[hsl(var(--forest))] text-white shadow-md"
+                      : "bg-[hsl(var(--meadow-light),0.5)] text-[hsl(var(--forest))] hover:bg-[hsl(var(--meadow-light))]"
+                  }`}
+                >
+                  Text
+                </button>
+                <button
+                  onClick={() => setControlStyle("arrows")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
+                    controlStyle === "arrows"
+                      ? "bg-[hsl(var(--forest))] text-white shadow-md"
+                      : "bg-[hsl(var(--meadow-light),0.5)] text-[hsl(var(--forest))] hover:bg-[hsl(var(--meadow-light))]"
+                  }`}
+                >
+                  Arrows
+                </button>
+              </div>
+            </div>
+            {controlStyle === "text" ? (
+              <ControlPad
+                onDirectionStart={handleDirectionStart}
+                currentDirection={direction}
+              />
+            ) : (
+              <ArrowControlPad
+                onDirectionStart={handleDirectionStart}
+                currentDirection={direction}
+              />
+            )}
+          </div>
+        </div>
+
+        {/* Desktop View - Camera Feeds */}
+        <div className="hidden lg:grid lg:grid-cols-2 gap-8">
           {/* Live Camera Feed Card */}
           <div className="card-glass rounded-2xl p-6 border border-[hsl(var(--meadow),0.2)]">
             <div className="flex items-center justify-between mb-6">
@@ -240,7 +274,9 @@ const FeedPage = () => {
                 >
                   <div
                     className={`w-2 h-2 rounded-full ${
-                      isConnected ? "bg-[hsl(var(--meadow-light))] animate-pulse" : "bg-[hsl(var(--sunset))]"
+                      isConnected
+                        ? "bg-[hsl(var(--meadow-light))] animate-pulse"
+                        : "bg-[hsl(var(--sunset))]"
                     }`}
                   ></div>
                   <span>{isConnected ? "LIVE" : "OFFLINE"}</span>
@@ -306,7 +342,9 @@ const FeedPage = () => {
                   Detection Status:
                 </span>
               </div>
-              <p className="text-[hsl(var(--forest))] text-sm">{detectionStatus}</p>
+              <p className="text-[hsl(var(--forest))] text-sm">
+                {detectionStatus}
+              </p>
             </div>
           </div>
         </div>
@@ -316,7 +354,6 @@ const FeedPage = () => {
 };
 
 export default FeedPage;
-
 
 // import { useEffect, useRef, useState } from "react";
 // import { Video, Wifi, WifiOff, Activity, AlertCircle } from "lucide-react";
